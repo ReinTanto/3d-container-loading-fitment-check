@@ -45,7 +45,8 @@
   input, select {
     width: 100%; background: var(--surface); color: var(--text);
     border-radius: 8px; padding: 9px 11px; font-size: 14px;
-    outline: none; transition: background .15s;
+    outline: none; border: none; appearance: none; -webkit-appearance: none;
+    box-shadow: none; transition: background .15s;
   }
   input:focus, select:focus { background: var(--surface-2); }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
