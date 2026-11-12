@@ -113,6 +113,18 @@ result rendered in three.js — styled after the visualizer in
 (dark scene, transparent container shell, one colour per product, ground
 grid + axes, orbit controls, hover highlight, camera auto-fit).
 
+| On load (sample load) | A load that fits | A load that does not fit |
+|---|---|---|
+| ![idle](docs/images/screenshot-idle.png) | ![fits](docs/images/screenshot-fits.png) | ![not fits](docs/images/screenshot-not-fits.png) |
+
+**On load** the view shows a sample load so it is never blank. After
+**Calculate & visualize**, the 3D scene renders the container (transparent
+shell) and every placed unit (one colour per product), and the left panel
+reports the result — the fits badge, units placed, box/used/remaining
+volume, a utilization bar, and a client-side collision check. When a load
+does not fit, the panel also shows the requested volume against the volume
+that actually fit.
+
 **Run the API** (if not already running):
 ```bash
 docker run -d --name fitcheck -p 8000:8000 <your-image>
