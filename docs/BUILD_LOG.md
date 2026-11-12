@@ -185,6 +185,31 @@ hover highlight + tooltip, and a camera that auto-fits the container.
   (40/40 units, 55% space left) and a non-fitting load (0/40) both render
   correctly, with no console errors.
 
+## 3d. Per-product orientation (fixed vs any)
+
+A per-product `orientation` field was added so a product can be declared
+either rotatable or fixed-orientation:
+
+- `"any"` (default) — all 6 axis-aligned rotations are tried.
+- `"fixed"` — the unit must stay upright; only the base (length/width)
+  swap is allowed. A product that only fits if tilted is rejected.
+
+**Implementation.** `Product.orientation` threads through the solver: the
+rotation set is now keyed by `(size, orientation)`, and `_rotations`
+returns either all 6 permutations (`any`) or just the base swap
+(`fixed`). The API exposes `orientation: "any" | "fixed"` (422 otherwise)
+and the frontend has a per-product selector.
+
+**Tests added** (6): fixed forces upright (a tall unit that only fits
+tilted is rejected), fixed still allows the base swap, invalid
+orientation raises / 422, and API any-vs-fixed. Total is now **60 tests,
+all passing**.
+
+**Issue found & fixed (test, not code).** My first "fixed must reject"
+test used a unit whose base actually swapped to fit upright, so the
+solver (correctly) fit it. Fixed the test to use a unit whose base
+cannot fit upright at all.
+
 ## 4. Known limitations (by design)
 
 - **Heuristic, not a proof.** `fits: true` is reliable (a valid placement

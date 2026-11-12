@@ -144,6 +144,71 @@ def test_validation_empty_products():
     assert r.status_code == 422
 
 
+def test_orientation_fixed_rejects_tilt():
+    """A fixed-orientation unit that only fits tilted must not fit."""
+    r = client.post(
+        "/check",
+        json={
+            "box": {"length": 100, "width": 100, "height": 50},
+            "products": [
+                {
+                    "id": "tall",
+                    "length": 10,
+                    "width": 10,
+                    "height": 60,
+                    "quantity": 1,
+                    "orientation": "fixed",
+                }
+            ],
+        },
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["fits"] is False
+    assert data["units_placed"] == 0
+
+
+def test_orientation_any_allows_tilt():
+    r = client.post(
+        "/check",
+        json={
+            "box": {"length": 100, "width": 100, "height": 50},
+            "products": [
+                {
+                    "id": "tall",
+                    "length": 10,
+                    "width": 10,
+                    "height": 60,
+                    "quantity": 1,
+                    "orientation": "any",
+                }
+            ],
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["fits"] is True
+
+
+def test_invalid_orientation_is_422():
+    r = client.post(
+        "/check",
+        json={
+            "box": {"length": 100, "width": 100, "height": 100},
+            "products": [
+                {
+                    "id": "a",
+                    "length": 10,
+                    "width": 10,
+                    "height": 10,
+                    "quantity": 1,
+                    "orientation": "sideways",
+                }
+            ],
+        },
+    )
+    assert r.status_code == 422
+
+
 def test_openapi_served():
     r = client.get("/openapi.json")
     assert r.status_code == 200

@@ -139,3 +139,51 @@ def test_invalid_dimensions_raise():
         check(box(0, 10, 10), [prod("a", 5, 5, 5)])
     with pytest.raises(ValueError):
         check(box(10, 10, 10), [prod("a", -5, 5, 5)])
+
+
+def test_invalid_orientation_raises():
+    import pytest
+
+    with pytest.raises(ValueError):
+        check(box(10, 10, 10), [Product("a", 5, 5, 5, 1, None, "sideways")])
+
+
+def test_fixed_orientation_forces_upright():
+    """A 'fixed' unit that only fits tilted must NOT fit when fixed.
+
+    Box 100 x 100 x 30 (short height). Unit 10 x 10 x 40: upright, its 40
+    height exceeds the 30 box height, so it only fits if tilted (40 along a
+    horizontal axis). 'any' fits; 'fixed' must not.
+    """
+    any_r = check(box(100, 100, 30), [prod("a", 10, 10, 40)])
+    assert any_r.fits
+    fixed_r = check(box(100, 100, 30), [Product("a", 10, 10, 40, 1, None, "fixed")])
+    assert not fixed_r.fits
+    assert fixed_r.units_placed == 0
+
+
+def test_fixed_orientation_allows_base_swap():
+    """A 'fixed' unit may still swap its base (l<->w), just not tilt.
+
+    Box 40 x 30 x 100. Unit 30 x 40 x 50 (fixed): upright (30 in 40, 40 in
+    30 fails) but base-swapped (40 in 40, 30 in 30) fits. So 'fixed' fits.
+    """
+    r = check(box(40, 30, 100), [Product("a", 30, 40, 50, 1, None, "fixed")])
+    assert r.fits
+    (pl,) = r.placements
+    # height must stay 50 (upright); base is the 40x30 swap.
+    assert pl.dz == 50
+    assert sorted((pl.dx, pl.dy)) == [30, 40]
+
+
+def test_fixed_tall_unit_cannot_tilt():
+    """A tall 'fixed' unit that would need to lie on its side cannot fit.
+
+    Box 100 x 100 x 50. Unit 10 x 10 x 60 (fixed): 60 > 50 height, so it
+    cannot stand; 'any' would let it lie down (60 along a horizontal axis)
+    and fit, but 'fixed' must reject it.
+    """
+    any_r = check(box(100, 100, 50), [prod("a", 10, 10, 60)])
+    assert any_r.fits
+    fixed_r = check(box(100, 100, 50), [Product("a", 10, 10, 60, 1, None, "fixed")])
+    assert not fixed_r.fits

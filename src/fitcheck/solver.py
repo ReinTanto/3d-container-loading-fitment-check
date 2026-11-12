@@ -44,7 +44,14 @@ class Box:
 
 @dataclass(frozen=True)
 class Product:
-    """A product type. Quantity is expanded into individual units."""
+    """A product type. Quantity is expanded into individual units.
+
+    `orientation` controls how the unit may be rotated:
+      - "any"   (default): all 6 axis-aligned rotations are tried.
+      - "fixed": the unit must keep its given orientation (height stays
+        vertical); only the length/width swap is allowed, since turning a
+        box 90° about the vertical axis is usually fine.
+    """
 
     id: str
     length: float
@@ -52,6 +59,7 @@ class Product:
     height: float
     quantity: int
     weight: float | None = None
+    orientation: str = "any"
 
 
 @dataclass
@@ -89,8 +97,14 @@ class CheckResult:
     first_unplaced: tuple[str, int] | None = None
 
 
-def _rotations(l: float, w: float, h: float) -> list[tuple[float, float, float]]:
-    """All 6 distinct axis-aligned orientations of a box."""
+def _rotations(l: float, w: float, h: float, orientation: str = "any") -> list[tuple[float, float, float]]:
+    """Allowed orientations of a box.
+
+    - "any": all 6 distinct axis-aligned permutations.
+    - "fixed": height stays vertical; only the (l, w) base swap is allowed.
+    """
+    if orientation == "fixed":
+        return list(dict.fromkeys([(l, w, h), (w, l, h)]))
     return list(dict.fromkeys(permutations((l, w, h))))
 
 
@@ -103,22 +117,26 @@ def check(box: Box, products: list[Product]) -> CheckResult:
             raise ValueError(f"product {p.id!r}: quantity must be >= 0")
         if p.length <= 0 or p.width <= 0 or p.height <= 0:
             raise ValueError(f"product {p.id!r}: dimensions must be positive")
+        if p.orientation not in ("any", "fixed"):
+            raise ValueError(f"product {p.id!r}: orientation must be 'any' or 'fixed'")
 
     # 1. Expand quantities into units (deterministic order).
-    units: list[tuple[str, int, float, float, float, float | None]] = []
+    # Each unit carries its orientation so rotation rules are per-product.
+    units: list[tuple[str, int, float, float, float, float | None, str]] = []
     for p in products:
         for i in range(1, p.quantity + 1):
-            units.append((p.id, i, p.length, p.width, p.height, p.weight))
+            units.append((p.id, i, p.length, p.width, p.height, p.weight, p.orientation))
 
     # 2. Largest volume first; deterministic tie-break.
     units.sort(key=lambda u: (-(u[2] * u[3] * u[4]), u[0], u[1]))
 
-    # Rotation order per distinct size: canonical orientation first, then the
-    # other permutations in fixed order. Deterministic.
-    rotation_order: dict[tuple[float, float, float], list[tuple[float, float, float]]] = {}
-    for (pid, idx, l, w, h, _) in units:
-        if (l, w, h) not in rotation_order:
-            rotation_order[(l, w, h)] = _rotations(l, w, h)
+    # Rotation order per distinct (size, orientation) pair: canonical
+    # orientation first, then the allowed permutations in fixed order.
+    rotation_order: dict[tuple[float, float, float, str], list[tuple[float, float, float]]] = {}
+    for (pid, idx, l, w, h, _, orient) in units:
+        key = (l, w, h, orient)
+        if key not in rotation_order:
+            rotation_order[key] = _rotations(l, w, h, orient)
 
     box_volume = box.length * box.width * box.height
     # Epsilon scales with the input magnitude: a fixed 1e-9 breaks when the
@@ -136,16 +154,16 @@ def check(box: Box, products: list[Product]) -> CheckResult:
     total_weight = 0.0
     first_unplaced: tuple[str, int] | None = None
 
-    for (pid, idx, l, w, h, weight) in units:
+    for (pid, idx, l, w, h, weight, _) in units:
         total_weight += weight or 0.0
 
     def try_place(
-        l: float, w: float, h: float,
+        l: float, w: float, h: float, orient: str,
         xs: list[float],
         ys: list[float],
     ) -> tuple[float, float, float, float, float, float] | None:
         """Find the lowest valid spot for one unit, or None."""
-        rots = rotation_order[(l, w, h)]
+        rots = rotation_order[(l, w, h, orient)]
         # Short-circuit: if no rotation fits the box's dimensions, the unit
         # can never be placed — return immediately.
         if not any(
@@ -182,8 +200,8 @@ def check(box: Box, products: list[Product]) -> CheckResult:
     # placed (which is the only thing that changes the arrangement). This
     # keeps an over-capacity load (many fitting + some not) at O(n^2)
     # instead of re-attempting the same failing unit on every pass.
-    pending: list[tuple[str, int, float, float, float]] = [
-        (pid, idx, l, w, h) for (pid, idx, l, w, h, _) in units
+    pending: list[tuple[str, int, float, float, float, str]] = [
+        (pid, idx, l, w, h, orient) for (pid, idx, l, w, h, _, orient) in units
     ]
 
     while pending:
@@ -191,8 +209,8 @@ def check(box: Box, products: list[Product]) -> CheckResult:
         ys = sorted({0.0} | {b[1] for b in placed} | {b[1] + b[4] for b in placed})
         placed_this_pass = 0
         fail_index: int | None = None
-        for i, (pid, idx, l, w, h) in enumerate(pending):
-            spot = try_place(l, w, h, xs, ys)
+        for i, (pid, idx, l, w, h, orient) in enumerate(pending):
+            spot = try_place(l, w, h, orient, xs, ys)
             if spot is None:
                 fail_index = i
                 if first_unplaced is None:

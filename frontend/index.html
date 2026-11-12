@@ -373,6 +373,14 @@ function addProduct(prefill = {}) {
       <div><label>Quantity</label><input class="p-q" type="number" value="${prefill.q ?? 1}" min="1" /></div>
       <div><label>Weight (opt.)</label><input class="p-weight" type="number" placeholder="kg" min="0" /></div>
     </div>
+    <div class="row" style="margin-top:8px">
+      <div><label>Orientation</label>
+        <select class="p-orient">
+          <option value="any" ${prefill.orient === "any" ? "selected" : ""}>Any (can be rotated / on its side)</option>
+          <option value="fixed" ${prefill.orient === "fixed" ? "selected" : ""}>Fixed (must stay upright)</option>
+        </select>
+      </div>
+    </div>
   `;
   el.querySelector(".danger").addEventListener("click", () => {
     if (productsEl.children.length > 1) el.remove();
@@ -404,6 +412,7 @@ function collectRequest() {
       width: parseFloat(el.querySelector(".p-w").value),
       height: parseFloat(el.querySelector(".p-h").value),
       quantity: parseInt(el.querySelector(".p-q").value, 10),
+      orientation: el.querySelector(".p-orient").value,
       ...(w ? { weight: parseFloat(w) } : {}),
     });
   }

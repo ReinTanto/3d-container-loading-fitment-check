@@ -66,6 +66,10 @@ curl -s http://localhost:8000/check \
 - Units are arbitrary (mm, cm, inches…) as long as they are consistent.
 - `max_weight` / `weight` are optional. If `max_weight` is set, every product
   must have a `weight` (otherwise 422).
+- `orientation` (per product, optional, default `"any"`):
+  - `"any"` — the unit may be rotated freely (all 6 orientations).
+  - `"fixed"` — the unit must stay upright; only its base (length/width)
+    may swap. A product that only fits if tilted will not fit when fixed.
 
 ### `GET /health`
 

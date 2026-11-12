@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -45,6 +47,9 @@ class ProductIn(BaseModel):
     height: float = Field(gt=0)
     quantity: int = Field(ge=0, le=100_000)
     weight: float | None = Field(default=None, ge=0)
+    # "any" = may be rotated freely (all 6 orientations);
+    # "fixed" = must stay upright (only the base length/width may swap).
+    orientation: Literal["any", "fixed"] = "any"
 
 
 class CheckRequest(BaseModel):
@@ -111,6 +116,7 @@ def check_endpoint(req: CheckRequest) -> CheckResponse:
             height=p.height,
             quantity=p.quantity,
             weight=p.weight,
+            orientation=p.orientation,
         )
         for p in req.products
     ]
