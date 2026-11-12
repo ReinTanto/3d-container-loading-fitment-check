@@ -42,17 +42,22 @@ automatically.
 
 ### Using it
 
-1. Enter the **container** dimensions (L/W/H) and an optional max weight.
-2. Add **products** (name, L/W/H, quantity, optional weight, orientation).
-3. Press **Calculate & visualize**.
-4. The 3D view renders the container (transparent shell) and every placed unit
-   (colored by product). The left panel shows the result (fits badge, units
-   placed, remaining volume/percentage, a utilization bar, and a collision
-   check).
+1. On load, the 3D view shows a **live sample load** (the default 40 ft
+   container with pallets), slowly auto-rotating, so the view is never blank.
+2. Enter the **container** dimensions (L/W/H) and an optional max weight.
+3. Add **products** (name, L/W/H, quantity, optional weight, orientation).
+4. Press **Calculate & visualize** — the sample is replaced by your real
+   result. The 3D view renders the container (transparent shell) and every
+   placed unit (colored by product). The left panel shows the result (fits
+   badge, units placed, remaining volume/percentage, a utilization bar, and a
+   collision check).
 
 **Controls:** drag to rotate · scroll to zoom · right-drag to pan ·
 double-click to reset the view · hover a box for its name, position, and
 dimensions.
+
+**Responsive:** on narrow screens (< 760px) the panel stacks above the 3D
+view and the page scrolls vertically; on desktop it is a fixed side panel.
 
 ---
 
@@ -71,6 +76,7 @@ index.html
     ├── imports three + OrbitControls (via import map)
     ├── scene setup (renderer, camera, lights, controls)
     ├── buildContainer() / buildBox() / buildGrid()
+    ├── showIdleSample()   — live auto-rotating sample on load
     ├── renderResult(res)  — called after each /check
     ├── checkCollisions(res) — client-side sanity check
     ├── collectRequest()   — read the form into a /check body

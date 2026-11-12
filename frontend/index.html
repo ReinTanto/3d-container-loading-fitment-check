@@ -3,18 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='2' width='12' height='12' rx='2' fill='%2346b3f0'/%3E%3C/svg%3E" />
 <title>3D Container Loading — Fitment Check</title>
 <style>
   :root {
-    --bg: #1b2429;
-    --panel: #22313a;
-    --panel-2: #2b3d47;
-    --text: #e6edf0;
-    --muted: #9fb3bd;
-    --accent: #42a5f5;
-    --ok: #66bb6a;
-    --bad: #ef5350;
-    --border: #37474f;
+    /* one ground, one ink, one accent; surfaces separated by tone, never a line */
+    --bg: #10181d;          /* 3D canvas ground */
+    --panel: #18242b;       /* left panel */
+    --surface: #223139;     /* raised surface (cards, inputs, buttons) */
+    --surface-2: #2c3d47;   /* hover / focus step */
+    --text: #e9eff2;        /* ink — running text at full strength */
+    --muted: #93a7b2;       /* secondary notes only */
+    --accent: #46b3f0;
+    --ok: #6cc06f;
+    --bad: #f0655f;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -23,81 +25,96 @@
     background: var(--bg);
     color: var(--text);
     display: grid;
-    grid-template-columns: 360px 1fr;
-    height: 100vh;
+    grid-template-columns: 384px 1fr;
+    height: 100dvh;
     overflow: hidden;
   }
   /* ---------- Left panel ---------- */
   #panel {
     background: var(--panel);
-    border-right: 1px solid var(--border);
-    padding: 16px;
+    padding: 22px 20px;
     overflow-y: auto;
   }
-  h1 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
-  .sub { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; line-height: 1.4; }
   .section-title {
-    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--muted); margin: 18px 0 8px;
+    font-size: 14px; font-weight: 600; color: var(--text); margin: 24px 0 10px;
   }
-  .row { display: flex; gap: 8px; margin-bottom: 8px; }
-  label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
   input, select {
-    width: 100%; background: var(--panel-2); border: 1px solid var(--border);
-    color: var(--text); border-radius: 5px; padding: 7px 9px; font-size: 13px;
-    outline: none;
+    width: 100%; background: var(--surface); color: var(--text);
+    border-radius: 8px; padding: 9px 11px; font-size: 14px;
+    outline: none; transition: background .15s;
   }
-  input:focus { border-color: var(--accent); }
+  input:focus, select:focus { background: var(--surface-2); }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .product {
-    background: var(--panel-2); border: 1px solid var(--border);
-    border-radius: 7px; padding: 10px; margin-bottom: 10px; position: relative;
+    background: var(--surface);
+    border-radius: 10px; padding: 12px; margin-bottom: 12px; position: relative;
   }
-  .product .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .product .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: middle; }
-  .product .name { font-size: 13px; font-weight: 600; }
+  .product .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .product .swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; margin-right: 8px; vertical-align: middle; }
+  .product .name { font-size: 14px; font-weight: 600; }
   .btn {
-    background: var(--accent); color: #0b1418; border: none; border-radius: 6px;
-    padding: 9px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
-    transition: filter .15s;
+    background: var(--accent); color: #08131a; border: none; border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: transform .12s, filter .15s;
   }
-  .btn:hover { filter: brightness(1.1); }
-  .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
-  .btn.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); padding: 4px 8px; font-size: 11px; }
-  .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  .btn.secondary { background: var(--surface); color: var(--text); }
+  .btn.danger { background: transparent; color: #ff9a94; padding: 4px 9px; font-size: 13px; }
+  .actions { display: flex; gap: 8px; margin-top: 18px; }
   .actions .btn { flex: 1; }
   /* ---------- Result ---------- */
-  #result { margin-top: 16px; display: none; }
+  #result { margin-top: 20px; display: none; }
   #result.show { display: block; }
   .badge {
-    display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 13px;
-    font-weight: 700; margin-bottom: 12px;
+    display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 14px;
+    font-weight: 700; margin-bottom: 14px;
   }
-  .badge.ok { background: rgba(102,187,106,.15); color: var(--ok); border: 1px solid var(--ok); }
-  .badge.bad { background: rgba(239,83,80,.15); color: var(--bad); border: 1px solid var(--bad); }
-  .stat { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
-  .stat:last-child { border-bottom: none; }
+  .badge.ok { background: rgba(108,192,111,.16); color: var(--ok); }
+  .badge.bad { background: rgba(240,101,95,.16); color: var(--bad); }
+  .stat { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; gap: 12px; }
   .stat .k { color: var(--muted); }
-  .bar { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; margin: 8px 0 4px; }
+  .bar { height: 8px; border-radius: 4px; background: var(--surface); overflow: hidden; margin: 10px 0 6px; }
   .bar > div { height: 100%; background: var(--accent); }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .legend .item { display: flex; align-items: center; font-size: 11px; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .legend .item { display: flex; align-items: center; font-size: 13px; color: var(--muted); }
   /* ---------- 3D view ---------- */
   #view { position: relative; }
   #view canvas { display: block; }
   #hud {
-    position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.45);
-    padding: 8px 12px; border-radius: 8px; font-size: 12px; color: var(--text);
-    pointer-events: none; max-width: 320px;
+    position: absolute; top: 14px; left: 14px; background: rgba(0,0,0,.5);
+    padding: 9px 13px; border-radius: 8px; font-size: 13px; color: var(--text);
+    pointer-events: none; max-width: 340px; line-height: 1.4;
   }
   #hud b { color: var(--accent); }
   #tooltip {
-    position: absolute; display: none; background: rgba(0,0,0,.7); color: #fff;
-    padding: 6px 10px; border-radius: 6px; font-size: 12px; pointer-events: none;
+    position: absolute; display: none; background: rgba(0,0,0,.78); color: #fff;
+    padding: 7px 11px; border-radius: 7px; font-size: 13px; pointer-events: none;
     transform: translate(-50%, -140%); white-space: nowrap; z-index: 5;
   }
-  .hint { position: absolute; bottom: 12px; left: 12px; font-size: 11px; color: var(--muted); pointer-events: none; }
+  .hint { position: absolute; bottom: 14px; left: 14px; font-size: 13px; color: var(--muted); pointer-events: none; }
+  /* ---------- responsive: stack panel above the 3D view on narrow screens ---------- */
+  @media (max-width: 760px) {
+    body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; overflow-y: auto; }
+    #panel { overflow: visible; }
+    #view { min-height: 60vh; }
+  }
+  /* ---------- motion (transform + opacity only, reduced-motion safe) ---------- */
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: no-preference) {
+    #panel > * { animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+    #panel > *:nth-child(2) { animation-delay: .06s; }
+    #panel > *:nth-child(3) { animation-delay: .12s; }
+    #panel > *:nth-child(4) { animation-delay: .18s; }
+    #panel > *:nth-child(5) { animation-delay: .24s; }
+    #panel > *:nth-child(6) { animation-delay: .30s; }
+  }
 </style>
 </head>
 <body>
@@ -179,6 +196,8 @@ let contentGroup = null;
 let gridGroup = null;
 const boxMeshes = [];       // for raycasting / hover
 let containerSize = null;   // for camera fit
+let hasComputed = false;    // idle sample plays until the first real /check
+let idleSpin = true;        // auto-rotate the idle sample
 
 /* ---------- helpers ---------- */
 function resize() {
@@ -431,6 +450,8 @@ const API = (location.protocol === "http:" || location.protocol === "https:")
 
 async function runCheck() {
   const req = collectRequest();
+  hasComputed = true;
+  idleSpin = false;
   document.getElementById("hud").innerHTML = "Calculating…";
   try {
     const r = await fetch(API + "/check", {
@@ -470,7 +491,7 @@ function updateResultPanel(res) {
   el.classList.add("show");
   const badge = document.getElementById("result-badge");
   badge.className = "badge " + (res.fits ? "ok" : "bad");
-  badge.textContent = res.fits ? "✓ FITS" : "✗ DOES NOT FIT";
+  badge.textContent = res.fits ? "Fits" : "Does not fit";
 
   // "Requested" = total volume of ALL the products you entered.
   // "Placed"    = volume of the units that actually fit (what's really in the container).
@@ -498,7 +519,7 @@ function updateResultPanel(res) {
   }
   if (res._collision) {
     const c = res._collision;
-    rows.push(["Collision check", c.ok ? "✓ no overlaps, all in bounds" : `✗ ${c.overlapPairs} overlaps / ${c.outOfBounds} out-of-bounds`]);
+    rows.push(["Collision check", c.ok ? "No overlaps, all in bounds" : `${c.overlapPairs} overlaps / ${c.outOfBounds} out-of-bounds`]);
   }
   const statsEl = document.getElementById("result-stats");
   // clear any bar/caption left over from a previous run
@@ -534,10 +555,10 @@ function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString(); }
 function updateHUD(res) {
   const c = res._collision;
   const collisionLine = c
-    ? (c.ok ? "· ✓ no collisions" : `· <span style="color:var(--bad)">✗ ${c.overlapPairs} overlaps, ${c.outOfBounds} out-of-bounds</span>`)
+    ? (c.ok ? "· no collisions" : `· <span style="color:var(--bad)">${c.overlapPairs} overlaps, ${c.outOfBounds} out-of-bounds</span>`)
     : "";
   document.getElementById("hud").innerHTML =
-    `${res.fits ? "✓ Fits" : "✗ Does not fit"} · ${res.units_placed}/${res.units_total} units · ` +
+    `${res.fits ? "Fits" : "Does not fit"} · ${res.units_placed}/${res.units_total} units · ` +
     `${res.remaining_volume_pct.toFixed(1)}% space left ${collisionLine}`;
 }
 
@@ -580,13 +601,49 @@ view.addEventListener("dblclick", () => {
   ), 1.5);
 });
 
+/* ---------- idle sample: a live 3D load so the view is never blank ----------
+   Plays an auto-rotating sample of the default form (40 ft container, pallets
+   + parcels) until the user runs a real calculation. */
+function showIdleSample() {
+  if (hasComputed) return;
+  const len = 1200, wid = 235, hei = 235;
+  containerSize = [len, hei, wid];
+  clearContent();
+  contentGroup = new THREE.Group();
+  contentGroup.add(buildContainer(len, wid, hei));
+  // sample placements: a 10 x 2 grid of pallets (120 x 80 x 100)
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 2; j++) {
+      contentGroup.add(buildBox({
+        name: "pallet", unit: i * 2 + j + 1,
+        x: i * 120, y: j * 80, z: 0, dx: 120, dy: 80, dz: 100,
+      }, 0x42a5f5));
+    }
+  }
+  contentGroup.position.set(-len / 2, 0, -wid / 2);
+  scene.add(contentGroup);
+  gridGroup = buildGrid(len, wid);
+  scene.add(gridGroup);
+  fitCameraToBox(new THREE.Box3(
+    new THREE.Vector3(-len / 2, 0, -wid / 2),
+    new THREE.Vector3(len / 2, hei, wid / 2)
+  ), 1.6);
+  document.getElementById("hud").innerHTML =
+    `Sample load · <b>Calculate</b> with your own container and products`;
+}
+
 /* ---------- animate loop ---------- */
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+  if (!hasComputed && idleSpin) {
+    const a = 0.0035;
+    camera.position.sub(controls.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), a).add(controls.target);
+  }
   renderer.render(scene, camera);
 }
 resize();
+showIdleSample();
 animate();
 </script>
 </body>

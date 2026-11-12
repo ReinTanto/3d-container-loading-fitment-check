@@ -1,0 +1,750 @@
+{
+ "url": "frontend/index.html",
+ "at": "2026-11-12T11:24:30.275Z",
+ "allow": [],
+ "viewports": [
+  {
+   "width": 1440,
+   "height": 900,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    1
+   ],
+   "motion": {
+    "elements": 9,
+    "css": 9,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "page": {
+     "height": 900,
+     "screens": 1,
+     "words": 93,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 0,
+     "sections": 0,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": []
+    },
+    "hero": {
+     "text": "3D Container Loading",
+     "words": 3,
+     "chars": 20,
+     "lines": 1,
+     "size": 20,
+     "vw": 1.4,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": -0.01,
+     "leading": 1.2,
+     "upper": false,
+     "italic": false,
+     "mono": false,
+     "align": "left",
+     "position": "left",
+     "widthRatio": 0.24,
+     "top": 22,
+     "tag": "h1",
+     "kind": "heading"
+    },
+    "h1": {
+     "text": "3D Container Loading",
+     "words": 3,
+     "lines": 1,
+     "size": 20,
+     "font": "-apple-system"
+    },
+    "headings": [],
+    "headingSummary": {
+     "count": 0,
+     "maxLines": 0,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "-apple-system",
+       "share": 0.88,
+       "mono": false
+      },
+      {
+       "family": "Arial",
+       "share": 0.12,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      13,
+      14,
+      20
+     ],
+     "sizeCount": 3,
+     "notLoaded": [],
+     "body": {
+      "font": "-apple-system",
+      "size": 13,
+      "leading": 1.2,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": null
+     },
+     "measureChars": 68,
+     "max": {
+      "size": 20,
+      "vw": 1.4,
+      "font": "-apple-system",
+      "text": "3D Container Loading"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.12,
+     "smallText": 0
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#10181d",
+     "bodyBgHsl": {
+      "h": 203,
+      "s": 0.29,
+      "l": 0.09
+     },
+     "dark": true,
+     "sectionBgs": [],
+     "textColors": [
+      {
+       "color": "#93a7b2",
+       "share": 0.58
+      },
+      {
+       "color": "#e9eff2",
+       "share": 0.31
+      },
+      {
+       "color": "#08131a",
+       "share": 0.05
+      },
+      {
+       "color": "#ff9a94",
+       "share": 0.03
+      },
+      {
+       "color": "#46b3f0",
+       "share": 0.02
+      }
+     ],
+     "button": {
+      "bg": "#223139",
+      "hsl": {
+       "h": 201,
+       "s": 0.25,
+       "l": 0.18
+      },
+      "fg": "#e9eff2"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 2,
+     "inHero": 0,
+     "radius": 8,
+     "height": 36,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": []
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 0,
+     "hairlineSamples": [],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 2,
+     "boxRadius": 10,
+     "squareMedia": 1,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "canvas",
+      "ratio": 0.73
+     }
+    ],
+    "nav": null,
+    "fontsLoaded": []
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 768,
+   "height": 1024,
+   "load": "load",
+   "screens": 1,
+   "filled": [
+    1
+   ],
+   "motion": {
+    "elements": 9,
+    "css": 9,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 768,
+     "h": 1024
+    },
+    "page": {
+     "height": 1024,
+     "screens": 1,
+     "words": 93,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 0,
+     "sections": 0,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": []
+    },
+    "hero": {
+     "text": "3D Container Loading",
+     "words": 3,
+     "chars": 20,
+     "lines": 1,
+     "size": 20,
+     "vw": 2.6,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": -0.01,
+     "leading": 1.2,
+     "upper": false,
+     "italic": false,
+     "mono": false,
+     "align": "left",
+     "position": "left",
+     "widthRatio": 0.45,
+     "top": 22,
+     "tag": "h1",
+     "kind": "heading"
+    },
+    "h1": {
+     "text": "3D Container Loading",
+     "words": 3,
+     "lines": 1,
+     "size": 20,
+     "font": "-apple-system"
+    },
+    "headings": [],
+    "headingSummary": {
+     "count": 0,
+     "maxLines": 0,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "-apple-system",
+       "share": 0.88,
+       "mono": false
+      },
+      {
+       "family": "Arial",
+       "share": 0.12,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      13,
+      14,
+      20
+     ],
+     "sizeCount": 3,
+     "notLoaded": [],
+     "body": {
+      "font": "-apple-system",
+      "size": 13,
+      "leading": 1.2,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": null
+     },
+     "measureChars": 57,
+     "max": {
+      "size": 20,
+      "vw": 2.6,
+      "font": "-apple-system",
+      "text": "3D Container Loading"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.12,
+     "smallText": 0
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#10181d",
+     "bodyBgHsl": {
+      "h": 203,
+      "s": 0.29,
+      "l": 0.09
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#18242b",
+       "top": 0,
+       "hsl": {
+        "h": 202,
+        "s": 0.28,
+        "l": 0.13
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#93a7b2",
+       "share": 0.58
+      },
+      {
+       "color": "#e9eff2",
+       "share": 0.31
+      },
+      {
+       "color": "#08131a",
+       "share": 0.05
+      },
+      {
+       "color": "#ff9a94",
+       "share": 0.03
+      },
+      {
+       "color": "#46b3f0",
+       "share": 0.02
+      }
+     ],
+     "button": {
+      "bg": "#223139",
+      "hsl": {
+       "h": 201,
+       "s": 0.25,
+       "l": 0.18
+      },
+      "fg": "#e9eff2"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 2,
+     "inHero": 2,
+     "radius": 8,
+     "height": 36,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": [
+      "+ Add product",
+      "Calculate & visualize"
+     ]
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 0,
+     "hairlineSamples": [],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 2,
+     "boxRadius": 10,
+     "squareMedia": 1,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [
+     {
+      "type": "canvas",
+      "ratio": 0.5
+     }
+    ],
+    "nav": null,
+    "fontsLoaded": []
+   },
+   "consoleErrors": []
+  },
+  {
+   "width": 390,
+   "height": 844,
+   "load": "load",
+   "screens": 2,
+   "filled": [
+    1,
+    1
+   ],
+   "motion": {
+    "elements": 9,
+    "css": 9,
+    "transitions": 0,
+    "scripted": 0,
+    "videos": 0,
+    "playingVideos": 0
+   },
+   "metrics": {
+    "viewport": {
+     "w": 390,
+     "h": 844
+    },
+    "page": {
+     "height": 1584,
+     "screens": 1.9,
+     "words": 93,
+     "img": 0,
+     "video": 0,
+     "canvas": 1,
+     "svg": 0,
+     "sections": 0,
+     "horizontalOverflow": 0,
+     "overflowCulprits": [],
+     "uiFragments": 0,
+     "uiAbuse": false,
+     "realPictures": 0,
+     "videoCount": 0,
+     "uiPictures": 0,
+     "pictureSamples": [],
+     "blendText": 0,
+     "sideScrollers": 0,
+     "brokenImages": [],
+     "emoji": []
+    },
+    "hero": {
+     "text": "3D Container Loading",
+     "words": 3,
+     "chars": 20,
+     "lines": 1,
+     "size": 20,
+     "vw": 5.1,
+     "font": "-apple-system",
+     "weight": 700,
+     "tracking": -0.01,
+     "leading": 1.2,
+     "upper": false,
+     "italic": false,
+     "mono": false,
+     "align": "left",
+     "position": "center",
+     "widthRatio": 0.9,
+     "top": 22,
+     "tag": "h1",
+     "kind": "heading"
+    },
+    "h1": {
+     "text": "3D Container Loading",
+     "words": 3,
+     "lines": 1,
+     "size": 20,
+     "font": "-apple-system"
+    },
+    "headings": [],
+    "headingSummary": {
+     "count": 0,
+     "maxLines": 0,
+     "over2Lines": 0,
+     "statements": 0,
+     "centered": 0,
+     "medianWords": null,
+     "mixedFontHeadings": 0
+    },
+    "type": {
+     "families": [
+      {
+       "family": "-apple-system",
+       "share": 0.88,
+       "mono": false
+      },
+      {
+       "family": "Arial",
+       "share": 0.12,
+       "mono": false
+      }
+     ],
+     "familyCount": 2,
+     "sizes": [
+      13,
+      14,
+      20
+     ],
+     "sizeCount": 3,
+     "notLoaded": [],
+     "body": {
+      "font": "-apple-system",
+      "size": 13,
+      "leading": 1.2,
+      "weight": 400,
+      "tracking": 0,
+      "contrast": null
+     },
+     "measureChars": 58,
+     "max": {
+      "size": 20,
+      "vw": 5.1,
+      "font": "-apple-system",
+      "text": "3D Container Loading"
+     },
+     "monoShare": 0,
+     "monoProseShare": 0,
+     "monoFamilies": [],
+     "monoSamples": [],
+     "microLabels": 0,
+     "microLabelShare": 0,
+     "microSamples": [],
+     "upperShare": 0,
+     "centerShare": 0.12,
+     "smallText": 0
+    },
+    "eyebrows": [],
+    "numbered": [],
+    "color": {
+     "bodyBg": "#10181d",
+     "bodyBgHsl": {
+      "h": 203,
+      "s": 0.29,
+      "l": 0.09
+     },
+     "dark": true,
+     "sectionBgs": [
+      {
+       "color": "#18242b",
+       "top": 0,
+       "hsl": {
+        "h": 202,
+        "s": 0.28,
+        "l": 0.13
+       }
+      },
+      {
+       "color": "#223139",
+       "top": 291,
+       "hsl": {
+        "h": 201,
+        "s": 0.25,
+        "l": 0.18
+       }
+      }
+     ],
+     "textColors": [
+      {
+       "color": "#93a7b2",
+       "share": 0.58
+      },
+      {
+       "color": "#e9eff2",
+       "share": 0.31
+      },
+      {
+       "color": "#08131a",
+       "share": 0.05
+      },
+      {
+       "color": "#ff9a94",
+       "share": 0.03
+      },
+      {
+       "color": "#46b3f0",
+       "share": 0.02
+      }
+     ],
+     "button": {
+      "bg": "#223139",
+      "hsl": {
+       "h": 201,
+       "s": 0.25,
+       "l": 0.18
+      },
+      "fg": "#e9eff2"
+     },
+     "lowContrast": []
+    },
+    "buttons": {
+     "count": 2,
+     "inHero": 0,
+     "radius": 8,
+     "height": 36,
+     "withShadow": 0,
+     "withGradient": 0,
+     "mono": 0,
+     "upper": 0,
+     "heroLabels": []
+    },
+    "surfaces": {
+     "shadowStatic": 0,
+     "shadowOverlay": 0,
+     "shadowSamples": [],
+     "gradients": 0,
+     "scrims": 0,
+     "gradientSamples": [],
+     "gradientText": 0,
+     "hairlines": 0,
+     "hairlineSamples": [],
+     "outlinedBoxes": 0,
+     "dashed": 0,
+     "blurred": 0,
+     "roundedBoxes": 2,
+     "boxRadius": 10,
+     "squareMedia": 1,
+     "roundedMedia": 0,
+     "mediaRadius": 0,
+     "textShadow": 0,
+     "cardRows": []
+    },
+    "heroMedia": [],
+    "nav": null,
+    "fontsLoaded": []
+   },
+   "consoleErrors": []
+  }
+ ],
+ "findings": [
+  {
+   "level": "FAIL",
+   "id": "body-size",
+   "width": 1440,
+   "message": "Body text is 13px (the size most of the running text is set in).",
+   "fix": "Body copy 16–20px. Map small sizes from blueprints onto your body step.",
+   "alsoAt": [
+    768,
+    390
+   ]
+  },
+  {
+   "level": "WARN",
+   "id": "first-action",
+   "width": 1440,
+   "message": "No visible button in the first screen.",
+   "fix": "Give the one primary action a real button in the first screen (a filled or solid-bordered control, 44px or taller), not only a link in the navigation.",
+   "alsoAt": [
+    390
+   ]
+  },
+  {
+   "level": "FAIL",
+   "id": "few-pictures",
+   "width": 1440,
+   "message": "Only 0 picture(s) on the page (0 photographs, footage or raster images, 0 interface fragments). Drawings in SVG do not count.",
+   "fix": "Find real pictures of the subject's world with scripts/assets.mjs (photographs, archival images, maps, engravings, footage), download them to assets/ and give them room: a hero picture, one per section that has a subject, a full-width band. At least four, usually six to twelve."
+  },
+  {
+   "level": "WARN",
+   "id": "no-footage",
+   "width": 1440,
+   "message": "No video anywhere on the page.",
+   "fix": "Look for one honest clip with scripts/assets.mjs --video (the place, the material, the process) and use it as a muted loop with a poster frame. Defend its absence only if no clip fits the subject."
+  },
+  {
+   "level": "WARN",
+   "id": "still-page",
+   "width": 1440,
+   "message": "Little motion: 9 element(s) moved while the page loaded and scrolled.",
+   "fix": "Give every section an entrance for its parts (not one fade of the whole block) and add one moving picture: a looping clip or a slow move on a photograph."
+  }
+ ],
+ "images": [
+  {
+   "viewport": "desktop",
+   "width": 1440,
+   "fold": "/home/rein/3d-container-loading-fitment-check/.taste-skill/inspect/desktop-fold.jpg",
+   "pages": [
+    "/home/rein/3d-container-loading-fitment-check/.taste-skill/inspect/desktop-page-01.jpg"
+   ]
+  },
+  {
+   "viewport": "tablet",
+   "width": 768,
+   "fold": "/home/rein/3d-container-loading-fitment-check/.taste-skill/inspect/tablet-fold.jpg",
+   "pages": [
+    "/home/rein/3d-container-loading-fitment-check/.taste-skill/inspect/tablet-page-01.jpg"
+   ]
+  },
+  {
+   "viewport": "mobile",
+   "width": 390,
+   "fold": "/home/rein/3d-container-loading-fitment-check/.taste-skill/inspect/mobile-fold.jpg",
+   "pages": [
+    "/home/rein/3d-container-loading-fitment-check/.taste-skill/inspect/mobile-page-01.jpg"
+   ]
+  }
+ ]
+}
