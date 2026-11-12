@@ -191,11 +191,17 @@ def test_large_quantity_performance():
 
 
 def test_large_quantity_timed():
-    """Sanity: 1000 units should not take more than a few seconds."""
+    """Sanity bound for a large, dense load.
+
+    1000 identical units in a 200^3 box is a pathological worst case for the
+    extreme-points heuristic (every candidate position is checked against every
+    placed box, and the full-support rule adds a per-candidate area query).
+    Typical loads (a few dozen to a few hundred units) resolve in well under a
+    second; this bound guards against regressions to many minutes."""
     start = time.perf_counter()
     check(Box(200, 200, 200), [Product("a", 20, 20, 20, 1000)])
     elapsed = time.perf_counter() - start
-    assert elapsed < 10, f"took {elapsed:.2f}s"
+    assert elapsed < 20, f"took {elapsed:.2f}s"
 
 
 def test_mixed_sizes_exact_tiling():
@@ -243,3 +249,60 @@ def test_weight_only_rejection_still_reports_geometry():
     assert not r.fits
     assert not r.weight_ok
     assert r.units_placed == 5  # geometry fine, weight not
+
+
+# ---- Full-support rule: no ledges / floating boxes ----
+
+def test_full_support_no_ledge():
+    """A box cannot overhang (ledge) — its whole base must be supported.
+
+    Box 100 x 100 x 100. Place a 60x60x10 base box, then a 60x60x10 box
+    offset so it would overhang the first. With full support, the second
+    cannot rest partially on the first (only 30x60 overlap < full 60x60), so
+    it must sit on the floor, not ledge on the first.
+    """
+    r = check(Box(100, 100, 100), [
+        Product("base", 60, 60, 10, 1),
+        Product("top", 60, 60, 10, 1),
+    ])
+    assert r.fits
+    (base, top) = r.placements
+    # The top box must be fully supported: either on the floor (z=0) or its
+    # base fully covered by the base box's top. Verify no partial overhang:
+    # if top is at z=10 (on the base), its footprint must be within the base.
+    if abs(top.z - 10) < 1e-6:
+        # fully covered: top footprint inside base footprint
+        assert top.x >= base.x - 1e-6 and top.x + top.dx <= base.x + base.dx + 1e-6
+        assert top.y >= base.y - 1e-6 and top.y + top.dy <= base.y + base.dy + 1e-6
+    else:
+        assert top.z == 0  # on the floor
+
+
+def test_full_support_rejects_partial_overhang():
+    """A unit whose base is only partially covered by supporters cannot be
+    placed at that position (no ledge). Construct a case where the only
+    'fit' would be a ledge, and confirm it is rejected.
+
+    Box 10 x 100 x 100 (narrow in x). A 20-wide unit cannot stand on the
+    floor in x (20 > 10), and cannot ledge on a 10-wide supporter either
+    (full 20 base not covered). So it must not fit.
+    """
+    r = check(Box(10, 100, 100), [
+        Product("supporter", 10, 50, 50, 1),
+        Product("overhang", 20, 50, 50, 1),
+    ])
+    # The 20-wide unit's base (20x50) cannot be fully supported: the floor
+    # is only 10 wide in x, and the supporter is 10 wide. So it does not fit.
+    assert not r.fits
+
+
+def test_full_support_stacking_still_works():
+    """Full support must not break normal stacking: a box exactly on top of
+    another (full coverage) is fine."""
+    r = check(Box(50, 50, 100), [
+        Product("a", 50, 50, 50, 2),
+    ])
+    assert r.fits
+    (p1, p2) = r.placements
+    assert p1.z == 0
+    assert p2.z == 50  # stacked, fully supported

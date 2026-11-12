@@ -70,6 +70,11 @@ curl -s http://localhost:8000/check \
   - `"any"` — the unit may be rotated freely (all 6 orientations).
   - `"fixed"` — the unit must stay upright; only its base (length/width)
     may swap. A product that only fits if tilted will not fit when fixed.
+- **Full-support rule (always on):** every unit's entire bottom face must
+  rest on solid support — the floor, or placed boxes whose combined top
+  surface fully covers the unit's base. **No ledges / floating boxes**: a
+  unit cannot overhang, so it is never placed where part of its base would
+  hang in the air.
 
 ### `GET /health`
 

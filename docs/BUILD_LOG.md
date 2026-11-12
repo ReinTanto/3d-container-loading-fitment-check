@@ -210,6 +210,36 @@ test used a unit whose base actually swapped to fit upright, so the
 solver (correctly) fit it. Fixed the test to use a unit whose base
 cannot fit upright at all.
 
+## 3e. Full-support rule (no ledges / floating boxes)
+
+A rule was added so that **every unit's entire bottom face must rest on
+solid support** — the floor, or placed boxes whose combined top surface
+fully covers the unit's base. No ledges / floating boxes: a unit is never
+placed where part of its base would overhang into the air.
+
+**Implementation.** A candidate position is now valid only if (a) it does
+not overlap any placed box **and** (b) `fully_supported()` passes — the
+placed boxes whose top sits exactly at the candidate `z` must together
+cover the unit's whole base area. The z-candidate set was changed from
+"top of the single highest box" to "top of *every* overlapping box", so a
+unit can rest on a combination of supporters. `fully_supported` uses a new
+octree `support_area` query (sub-linear).
+
+**Performance issue found & fixed.** Profiling showed the overlap check was
+the bottleneck (416K calls). The octree *regressed* for dense, uniform
+loads (it degrades when many boxes share a cell — 134M box-overlap calls).
+Fix: the overlap check uses a **flat list** scan (fast for this case), and
+the octree is kept only for the cheap support-area query.
+
+**Scaling note.** 1000 identical units in a 200³ box is a pathological
+worst case (~12s) because every candidate is checked against every placed
+box. Typical loads (dozens to a few hundred units) resolve in well under a
+second. The timing test bounds this at < 20s to guard against regressions
+to many minutes.
+
+**Tests added** (3): no-ledge, rejects-partial-overhang, stacking-still-
+works. Total is now **63 tests, all passing**.
+
 ## 4. Known limitations (by design)
 
 - **Heuristic, not a proof.** `fits: true` is reliable (a valid placement

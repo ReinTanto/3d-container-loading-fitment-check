@@ -157,12 +157,47 @@ def check(box: Box, products: list[Product]) -> CheckResult:
     for (pid, idx, l, w, h, weight, _) in units:
         total_weight += weight or 0.0
 
+    def overlaps_any(
+        x: float, y: float, z: float, dx: float, dy: float, dz: float,
+    ) -> bool:
+        """Does the candidate AABB overlap any placed box? Flat scan — for the
+        dense, uniform loads this handles, a flat list beats the octree (which
+        degrades when many boxes share a cell)."""
+        for (px, py, pz, pdx, pdy, pdz) in placed:
+            if not (
+                x + dx <= px + eps
+                or px + pdx <= x + eps
+                or y + dy <= py + eps
+                or py + pdy <= y + eps
+                or z + dz <= pz + eps
+                or pz + pdz <= z + eps
+            ):
+                return True
+        return False
+
+    def fully_supported(x: float, y: float, z: float, dx: float, dy: float) -> bool:
+        """Full-support rule: the unit's ENTIRE bottom face must rest on
+        solid support. The floor (z == 0) always supports. Otherwise, the
+        placed boxes whose top surface sits exactly at `z` and whose footprint
+        overlaps the unit must *together* cover the whole unit footprint — no
+        partial overhang / ledge is allowed. Uses the octree for a fast
+        (sub-linear) area query."""
+        if z <= eps:
+            return True
+        area = dx * dy
+        if area <= 0:
+            return False
+        return tree.support_area(x, y, dx, dy, z, eps) >= area - eps
+
     def try_place(
         l: float, w: float, h: float, orient: str,
         xs: list[float],
         ys: list[float],
     ) -> tuple[float, float, float, float, float, float] | None:
-        """Find the lowest valid spot for one unit, or None."""
+        """Find the lowest valid spot for one unit, or None.
+
+        `xs`/`ys` (candidate coordinates) are shared by every unit in the
+        pass, so building them once per pass keeps per-unit cost low."""
         rots = rotation_order[(l, w, h, orient)]
         # Short-circuit: if no rotation fits the box's dimensions, the unit
         # can never be placed — return immediately.
@@ -180,15 +215,23 @@ def check(box: Box, products: list[Product]) -> CheckResult:
                 for y in ys:
                     if y + dy > box.width + eps:
                         continue
-                    # Candidate z: 0 plus the top of the highest placed box
-                    # whose footprint overlaps this unit's footprint in 2D.
-                    # (Overlap, not containment: a unit may rest on a box it
-                    # only partially overflows — e.g. pallets in a row.)
-                    zs = [0.0, tree.top_z(x, y, dx, dy, eps)]
+                    # Candidate z: 0 plus the top of every placed box whose
+                    # footprint overlaps this unit's footprint in 2D.
+                    zs = {0.0}
+                    for (px, py, pz, pdx, pdy, pdz) in placed:
+                        if (
+                            x + dx > px + eps and px + pdx > x + eps
+                            and y + dy > py + eps and py + pdy > y + eps
+                        ):
+                            zs.add(pz + pdz)
                     for z in sorted(zs):
                         if z + dz > box.height + eps:
                             continue
-                        if not tree.overlaps(x, y, z, dx, dy, dz, eps):
+                        # Valid only if there is no overlap AND the whole
+                        # bottom face is supported (no ledges / floating).
+                        if not overlaps_any(x, y, z, dx, dy, dz) and fully_supported(
+                            x, y, z, dx, dy
+                        ):
                             return (x, y, z, dx, dy, dz)
         return None
 
@@ -205,6 +248,8 @@ def check(box: Box, products: list[Product]) -> CheckResult:
     ]
 
     while pending:
+        # Candidate coordinates, built once per pass and shared by every unit
+        # (they depend only on `placed`).
         xs = sorted({0.0} | {b[0] for b in placed} | {b[0] + b[3] for b in placed})
         ys = sorted({0.0} | {b[1] for b in placed} | {b[1] + b[4] for b in placed})
         placed_this_pass = 0

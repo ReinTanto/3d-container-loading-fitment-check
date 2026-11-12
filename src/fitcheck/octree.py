@@ -50,6 +50,14 @@ class Octree:
               eps: float) -> float:
         return self._root.top_z(x, y, dx, dy, eps)
 
+    def support_area(self, x: float, y: float, dx: float, dy: float,
+                     z: float, eps: float) -> float:
+        """Total 2D footprint area of placed boxes whose top surface is at
+        `z` and whose footprint overlaps the query region. Used for the
+        full-support rule (a unit is supported iff this equals its base
+        area). Fast: descends only into nodes intersecting the region."""
+        return self._root.support_area(x, y, dx, dy, z, eps)
+
     def __len__(self) -> int:
         return self._root.count
 
@@ -183,6 +191,27 @@ class _Node:
                 if t > best:
                     best = t
         return best
+
+    def support_area(self, x: float, y: float, dx: float, dy: float,
+                     z: float, eps: float) -> float:
+        """Total 2D overlap area of placed boxes whose top is at `z` and
+        whose footprint overlaps the query region."""
+        if not self._intersects_2d(x, y, dx, dy, eps):
+            return 0.0
+        total = 0.0
+        for b in self.boxes:
+            top = b.z + b.dz
+            if abs(top - z) > eps:
+                continue
+            if self._footprint_overlaps(b, x, y, dx, dy, eps):
+                ox = min(x + dx, b.x + b.dx) - max(x, b.x)
+                oy = min(y + dy, b.y + b.dy) - max(y, b.y)
+                if ox > eps and oy > eps:
+                    total += ox * oy
+        if self.children:
+            for c in self.children:
+                total += c.support_area(x, y, dx, dy, z, eps)
+        return total
 
     def _intersects_2d(self, x: float, y: float,
                        dx: float, dy: float, eps: float) -> bool:
