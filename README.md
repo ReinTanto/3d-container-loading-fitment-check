@@ -140,5 +140,8 @@ pytest
 
 ## Documentation
 
+- [**API guide**](docs/API.md) — endpoints, request/response reference, worked examples, client snippets, error handling, semantics & guarantees
+- [**3D view guide**](docs/3D-VIEW.md) — how the three.js visualization works and how to build your own
+- [Docs index](docs/README.md)
 - [Kickoff & requirements](docs/KICKOFF.md)
 - [Build log — process, issues found, fixes](docs/BUILD_LOG.md)
