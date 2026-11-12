@@ -1,31 +1,35 @@
 """Core 3D bin-packing feasibility solver.
 
-Algorithm: extreme-points constructive heuristic.
+Algorithm: extreme-points constructive heuristic, accelerated with a 3D
+interval tree (octree) for fast overlap and "top of supporting boxes"
+queries (see ``octree.py``).
 
 1. Expand product quantities into individual units.
 2. Sort units by volume, largest first (ties broken by product id, then
    unit index, so the result is deterministic).
 3. For each unit, try all 6 axis-aligned rotations. For each rotation,
    look for the lowest valid position among "extreme points" — candidate
-   positions derived from the corners of already-placed boxes (a box
-   corner projected onto the floor, and onto the top of other boxes).
-   A position is valid when the unit's AABB does not overlap any
-   already-placed box and stays inside the container.
-4. All units placed -> fits; otherwise the first unit that could not be
+   positions derived from the corners of already-placed boxes. A position
+   is valid when the unit's AABB does not overlap any already-placed box
+   and stays inside the container.
+4. A unit that does not fit now may fit after later (smaller) units are
+   placed, so placement is done in bounded multi-pass: stop a pass at the
+   first failure, and only retry if a later unit was placed (which is what
+   changes the arrangement).
+5. All units placed -> fits; otherwise the first unit that could not be
    placed is reported.
 
 Honesty caveat: a "fits" answer is reliable (a valid placement is
 returned). A "does not fit" answer means this heuristic did not find an
 arrangement; it is not a proof that none exists.
-
-Complexity is O(n^2 * 6 * candidates) in the worst case, which is fine
-for a few thousand units.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from itertools import permutations
+
+from .octree import Octree
 
 
 @dataclass(frozen=True)
@@ -90,26 +94,6 @@ def _rotations(l: float, w: float, h: float) -> list[tuple[float, float, float]]
     return list(dict.fromkeys(permutations((l, w, h))))
 
 
-def _overlaps(
-    x: float, y: float, z: float, dx: float, dy: float, dz: float,
-    placed: list[tuple[float, float, float, float, float, float]],
-    eps: float,
-) -> bool:
-    """AABB overlap test against all placed boxes."""
-    for (px, py, pz, pdx, pdy, pdz) in placed:
-        if (
-            x + dx <= px + eps
-            or px + pdx <= x + eps
-            or y + dy <= py + eps
-            or py + pdy <= y + eps
-            or z + dz <= pz + eps
-            or pz + pdz <= z + eps
-        ):
-            continue  # separated on at least one axis
-        return True
-    return False
-
-
 def check(box: Box, products: list[Product]) -> CheckResult:
     """Run the fitment check. Deterministic."""
     if box.length <= 0 or box.width <= 0 or box.height <= 0:
@@ -129,11 +113,12 @@ def check(box: Box, products: list[Product]) -> CheckResult:
     # 2. Largest volume first; deterministic tie-break.
     units.sort(key=lambda u: (-(u[2] * u[3] * u[4]), u[0], u[1]))
 
-    # Rotation order per unit: canonical orientation first, then the other
-    # 5 permutations in fixed order. Deterministic.
+    # Rotation order per distinct size: canonical orientation first, then the
+    # other permutations in fixed order. Deterministic.
     rotation_order: dict[tuple[float, float, float], list[tuple[float, float, float]]] = {}
     for (pid, idx, l, w, h, _) in units:
-        rotation_order[(l, w, h)] = _rotations(l, w, h)
+        if (l, w, h) not in rotation_order:
+            rotation_order[(l, w, h)] = _rotations(l, w, h)
 
     box_volume = box.length * box.width * box.height
     # Epsilon scales with the input magnitude: a fixed 1e-9 breaks when the
@@ -143,75 +128,90 @@ def check(box: Box, products: list[Product]) -> CheckResult:
     scale = max(box.length, box.width, box.height, 1.0)
     eps = max(1e-9, scale * 1e-9)
 
+    # Occupancy structure for fast overlap / top-z queries.
+    tree = Octree(box.length, box.width, box.height)
+    # Flat list of placed boxes, for generating candidate x/y coordinates.
+    placed: list[tuple[float, float, float, float, float, float]] = []
+    placements: list[Placement] = []
+    total_weight = 0.0
+    first_unplaced: tuple[str, int] | None = None
+
+    for (pid, idx, l, w, h, weight) in units:
+        total_weight += weight or 0.0
+
     def try_place(
         l: float, w: float, h: float,
-        placed: list[tuple[float, float, float, float, float, float]],
+        xs: list[float],
+        ys: list[float],
     ) -> tuple[float, float, float, float, float, float] | None:
-        """Find the best (lowest) spot for one unit, or None."""
-        for (dx, dy, dz) in rotation_order[(l, w, h)]:
+        """Find the lowest valid spot for one unit, or None."""
+        rots = rotation_order[(l, w, h)]
+        # Short-circuit: if no rotation fits the box's dimensions, the unit
+        # can never be placed — return immediately.
+        if not any(
+            dx <= box.length + eps and dy <= box.width + eps and dz <= box.height + eps
+            for (dx, dy, dz) in rots
+        ):
+            return None
+        for (dx, dy, dz) in rots:
             if dx > box.length + eps or dy > box.width + eps or dz > box.height + eps:
                 continue
-            xs = sorted({0.0} | {b[0] for b in placed} | {b[0] + b[3] for b in placed})
-            ys = sorted({0.0} | {b[1] for b in placed} | {b[1] + b[4] for b in placed})
             for x in xs:
                 if x + dx > box.length + eps:
                     continue
                 for y in ys:
                     if y + dy > box.width + eps:
                         continue
-                    # Candidate z: 0 plus the top of every placed box whose
-                    # footprint *overlaps* the new unit's footprint in 2D.
+                    # Candidate z: 0 plus the top of the highest placed box
+                    # whose footprint overlaps this unit's footprint in 2D.
                     # (Overlap, not containment: a unit may rest on a box it
                     # only partially overflows — e.g. pallets in a row.)
-                    zs = {0.0}
-                    for (px, py, pz, pdx, pdy, pdz) in placed:
-                        if (
-                            x + dx > px + eps
-                            and px + pdx > x + eps
-                            and y + dy > py + eps
-                            and py + pdy > y + eps
-                        ):
-                            zs.add(pz + pdz)
+                    zs = [0.0, tree.top_z(x, y, dx, dy, eps)]
                     for z in sorted(zs):
                         if z + dz > box.height + eps:
                             continue
-                        if not _overlaps(x, y, z, dx, dy, dz, placed, eps):
+                        if not tree.overlaps(x, y, z, dx, dy, dz, eps):
                             return (x, y, z, dx, dy, dz)
         return None
 
-    # 3. Greedy placement at extreme points, in multiple passes.
+    # 3. Bounded multi-pass placement.
     #
     # A single pass is order-dependent: a unit that does not fit now may fit
-    # after later (smaller) units are placed. So we make a first pass in
-    # largest-first order, collect the units that could not be placed, and
-    # then retry them in further passes until no progress is made.
-    placed: list[tuple[float, float, float, float, float, float]] = []
-    placements: list[Placement] = []
-    total_weight = 0.0
-    first_unplaced: tuple[str, int] | None = None
-
-    pending = list(units)
-    for (pid, idx, l, w, h, weight) in units:
-        total_weight += weight or 0.0
+    # after later (smaller) units are placed. So we walk `pending` in order,
+    # stop a pass at the first failure, and only retry if a later unit was
+    # placed (which is the only thing that changes the arrangement). This
+    # keeps an over-capacity load (many fitting + some not) at O(n^2)
+    # instead of re-attempting the same failing unit on every pass.
+    pending: list[tuple[str, int, float, float, float]] = [
+        (pid, idx, l, w, h) for (pid, idx, l, w, h, _) in units
+    ]
 
     while pending:
-        progress = False
-        still_pending = []
-        for (pid, idx, l, w, h, _) in pending:
-            spot = try_place(l, w, h, placed)
+        xs = sorted({0.0} | {b[0] for b in placed} | {b[0] + b[3] for b in placed})
+        ys = sorted({0.0} | {b[1] for b in placed} | {b[1] + b[4] for b in placed})
+        placed_this_pass = 0
+        fail_index: int | None = None
+        for i, (pid, idx, l, w, h) in enumerate(pending):
+            spot = try_place(l, w, h, xs, ys)
             if spot is None:
-                still_pending.append((pid, idx, l, w, h, None))
+                fail_index = i
                 if first_unplaced is None:
                     first_unplaced = (pid, idx)
-                continue
+                break
             placed.append(spot)
+            tree.add(spot[0], spot[1], spot[2], spot[3], spot[4], spot[5])
             placements.append(
                 Placement(pid, idx, spot[0], spot[1], spot[2], spot[3], spot[4], spot[5])
             )
-            progress = True
-        if not progress:
-            break
-        pending = still_pending
+            placed_this_pass += 1
+            if first_unplaced is not None and (pid, idx) == first_unplaced:
+                first_unplaced = None
+        if fail_index is None:
+            break  # everything placed
+        if placed_this_pass == 0:
+            break  # nothing changed; no further pass can help
+        # Resume from the failed unit; drop the already-placed prefix.
+        pending = pending[fail_index:]
 
     used_volume = sum(pl.volume() for pl in placements)
     remaining = max(0.0, box_volume - used_volume)

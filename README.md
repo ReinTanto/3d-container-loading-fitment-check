@@ -73,14 +73,17 @@ curl -s http://localhost:8000/check \
 
 ## How it works
 
-Extreme-points constructive heuristic:
+Extreme-points constructive heuristic, accelerated with a 3D interval tree
+(octree) for fast collision and "top of supporting boxes" queries:
 
 1. Expand quantities into individual units.
 2. Sort units by volume, largest first (deterministic tie-break).
 3. For each unit, try all 6 axis-aligned rotations and place it at the lowest
    valid "extreme point" (corners of already-placed boxes, on the floor or
    on top of other boxes).
-4. All units placed → `fits: true`; otherwise the first unplaced unit is
+4. A unit that doesn't fit now may fit after later (smaller) units are
+   placed, so placement is done in bounded multi-pass.
+5. All units placed → `fits: true`; otherwise the first unplaced unit is
    reported in `first_unplaced`.
 
 Remaining space is exact volume arithmetic:

@@ -109,9 +109,56 @@ called `Product(...)` directly without `quantity`. Fixed the call to pass
   weight-rejected, missing-weight 422, negative-dimension 422,
   empty-products 422, OpenAPI served.
 - **Live server** exercised with `curl` against all use cases + validation.
+- **Edge-case tests** (`tests/test_edge_cases.py`): boundary dimensions,
+  float precision, very large/small units, zero/negative dimensions, zero
+  quantities, identical-cube grids, rotation-only fits, weight at/over
+  limit, determinism, no-overlap and inside-box invariants, and a
+  1000-unit performance check.
 - **Docker image** builds successfully.
 
-All 26 tests pass.
+All 53 tests pass.
+
+## 3b. Edge-case testing (second round)
+
+After the initial pass I systematically probed edge cases
+(`tests/test_edge_cases.py`): boundary dimensions (exact fit, one-over,
+one-under), float precision, very large (mm) and very small units,
+zero/negative dimensions, zero quantities, identical-cube grids,
+rotation-only fits, weight at/over the limit, determinism, and
+no-overlap / inside-box invariants under mixed sizes.
+
+### Issue 6 — O(n^3) performance on large loads
+
+**Symptom.** 1000 units took 17s (and a naive multi-pass retry loop made
+it 37s). The naive solver checks, for every candidate position, whether the
+unit's AABB overlaps *any* of the already-placed boxes — O(n) per
+candidate, O(n²) per unit, O(n³) overall.
+
+**Fix.** Replaced the flat placed-box list with a 3D interval tree
+(octree, `src/fitcheck/octree.py`) that answers both queries in ~O(log n):
+- `overlaps(x, y, z, dx, dy, dz)` — does the candidate AABB collide?
+- `top_z(x, y, dx, dy)` — the highest placed-box top whose footprint
+  overlaps the candidate's 2D region (used to generate candidate z-levels).
+
+After the fix: 1000 units in 4.9s, 5000 units in 4.9s (it correctly
+reports that only 1000 fit in a 200³ box). The bounded multi-pass loop
+(§2, issue 3) is retained: a pass stops at the first failure and only
+retries if a later unit was placed, so an over-capacity load stays at
+O(n²) instead of re-attempting the same failing unit on every pass.
+
+### Issue 7 — `first_unplaced` was stale across passes
+
+**Symptom.** A unit that failed on pass 1 but was placed on pass 2 still
+left `first_unplaced` set, so `fits` was wrongly `false` even though all
+units were placed.
+
+**Fix.** Clear `first_unplaced` when the flagged unit is subsequently
+placed; only set it for a unit that is still unplaced at the end.
+
+### Test-count note
+
+The edge-case round added 27 tests. Total is now **53 tests, all passing**
+(solver 12, use-cases 6, API 8, edge-cases 27).
 
 ## 4. Known limitations (by design)
 
