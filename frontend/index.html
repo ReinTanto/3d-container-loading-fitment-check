@@ -196,8 +196,7 @@ let contentGroup = null;
 let gridGroup = null;
 const boxMeshes = [];       // for raycasting / hover
 let containerSize = null;   // for camera fit
-let hasComputed = false;    // idle sample plays until the first real /check
-let idleSpin = true;        // auto-rotate the idle sample
+let hasComputed = false;    // idle sample shows until the first real /check
 
 /* ---------- helpers ---------- */
 function resize() {
@@ -451,7 +450,6 @@ const API = (location.protocol === "http:" || location.protocol === "https:")
 async function runCheck() {
   const req = collectRequest();
   hasComputed = true;
-  idleSpin = false;
   document.getElementById("hud").innerHTML = "Calculating…";
   try {
     const r = await fetch(API + "/check", {
@@ -601,9 +599,10 @@ view.addEventListener("dblclick", () => {
   ), 1.5);
 });
 
-/* ---------- idle sample: a live 3D load so the view is never blank ----------
-   Plays an auto-rotating sample of the default form (40 ft container, pallets
-   + parcels) until the user runs a real calculation. */
+/* ---------- idle sample: a 3D load so the view is never blank ----------
+   Shows a static sample of the default form (40 ft container, pallets)
+   until the user runs a real calculation. The user can still orbit it
+   manually with the mouse. */
 function showIdleSample() {
   if (hasComputed) return;
   const len = 1200, wid = 235, hei = 235;
@@ -636,10 +635,6 @@ function showIdleSample() {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-  if (!hasComputed && idleSpin) {
-    const a = 0.0035;
-    camera.position.sub(controls.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), a).add(controls.target);
-  }
   renderer.render(scene, camera);
 }
 resize();
