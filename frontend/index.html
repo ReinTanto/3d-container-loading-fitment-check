@@ -10,8 +10,10 @@
     /* one ground, one ink, one accent; surfaces separated by tone, never a line */
     --bg: #10181d;          /* 3D canvas ground */
     --panel: #18242b;       /* left panel */
-    --surface: #223139;     /* raised surface (cards, inputs, buttons) */
+    --surface: #223139;     /* raised surface (cards, buttons) */
     --surface-2: #2c3d47;   /* hover / focus step */
+    --field: #3a4b57;       /* input background — lighter, stands out from cards */
+    --field-focus: #46586a; /* input focus step */
     --text: #e9eff2;        /* ink — running text at full strength */
     --muted: #93a7b2;       /* secondary notes only */
     --accent: #46b3f0;
@@ -43,12 +45,12 @@
   .row { display: flex; gap: 8px; margin-bottom: 10px; }
   label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
   input, select {
-    width: 100%; background: var(--surface); color: var(--text);
+    width: 100%; background: var(--field); color: var(--text);
     border-radius: 8px; padding: 9px 11px; font-size: 14px;
     outline: none; border: none; appearance: none; -webkit-appearance: none;
     box-shadow: none; transition: background .15s;
   }
-  input:focus, select:focus { background: var(--surface-2); }
+  input:focus, select:focus { background: var(--field); }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .product {
