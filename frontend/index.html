@@ -432,6 +432,10 @@ async function runCheck() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.detail || ("HTTP " + r.status));
     data._box = req.box;
+    // total volume of ALL requested products (the "requested" volume)
+    data.products_total_volume = req.products.reduce(
+      (s, p) => s + p.length * p.width * p.height * p.quantity, 0
+    );
     // assign a stable color per product id
     data._colorMap = {};
     const seen = [];
@@ -459,13 +463,27 @@ function updateResultPanel(res) {
   badge.className = "badge " + (res.fits ? "ok" : "bad");
   badge.textContent = res.fits ? "✓ FITS" : "✗ DOES NOT FIT";
 
+  // "Requested" = total volume of ALL the products you entered.
+  // "Placed"    = volume of the units that actually fit (what's really in the container).
+  // They differ when the load does not fit (waste / geometry).
+  const requestedVol = res.products_total_volume; // computed in runCheck
   const rows = [
     ["Units placed", `${res.units_placed} / ${res.units_total}`],
     ["Box volume", fmt(res.box_volume)],
-    ["Used volume", fmt(res.used_volume)],
-    ["Remaining volume", fmt(res.remaining_volume)],
-    ["Remaining %", res.remaining_volume_pct.toFixed(2) + " %"],
   ];
+  if (res.fits) {
+    rows.push(
+      ["Volume used", fmt(res.used_volume)],
+      ["Remaining volume", fmt(res.remaining_volume)],
+      ["Remaining %", res.remaining_volume_pct.toFixed(2) + " %"],
+    );
+  } else {
+    rows.push(
+      ["Requested volume", `${fmt(requestedVol)} (${(100 * requestedVol / res.box_volume).toFixed(1)}% of box)`],
+      ["Volume actually placed", `${fmt(res.used_volume)} (${res.used_volume_pct.toFixed(1)}% of box)`],
+      ["Did not fit", res.first_unplaced ? `${res.first_unplaced.product_id} #${res.first_unplaced.unit}` : "—"],
+    );
+  }
   if (res.max_weight != null) {
     rows.push(["Weight", `${fmt(res.total_weight)} / ${fmt(res.max_weight)} ${res.weight_ok ? "" : "(over)"}`]);
   }
@@ -473,17 +491,23 @@ function updateResultPanel(res) {
     const c = res._collision;
     rows.push(["Collision check", c.ok ? "✓ no overlaps, all in bounds" : `✗ ${c.overlapPairs} overlaps / ${c.outOfBounds} out-of-bounds`]);
   }
-  document.getElementById("result-stats").innerHTML = rows
+  const statsEl = document.getElementById("result-stats");
+  // clear any bar/caption left over from a previous run
+  statsEl.parentElement.querySelectorAll(".bar, .bar-caption").forEach(n => n.remove());
+  statsEl.innerHTML = rows
     .map(([k, v]) => `<div class="stat"><span class="k">${k}</span><span>${v}</span></div>`).join("");
 
-  // utilization bar
+  // utilization bar — always shows what is ACTUALLY in the container
   const bar = document.createElement("div");
   bar.className = "bar";
   bar.innerHTML = `<div style="width:${res.used_volume_pct.toFixed(1)}%"></div>`;
-  document.getElementById("result-stats").after(bar);
+  statsEl.after(bar);
   const cap = document.createElement("div");
+  cap.className = "bar-caption";
   cap.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:8px";
-  cap.textContent = `Container ${res.used_volume_pct.toFixed(1)}% full`;
+  cap.textContent = res.fits
+    ? `Container ${res.used_volume_pct.toFixed(1)}% full`
+    : `Only ${res.used_volume_pct.toFixed(1)}% of the container is filled (requested ${(100 * requestedVol / res.box_volume).toFixed(1)}%)`;
   bar.after(cap);
 
   // legend
