@@ -95,6 +95,33 @@ arrangement; it is not a mathematical proof that none exists. (Running the
 check is deterministic, so you will always get the same answer for the same
 request.)
 
+## 3D test frontend
+
+A self-contained test frontend (no build step) lets you enter the container
+size and products (name, dimensions, quantity), run the check, and see the
+result rendered in three.js — styled after the visualizer in
+[skjolber/3d-bin-container-packing](https://github.com/skjolber/3d-bin-container-packing)
+(dark scene, transparent container shell, one colour per product, ground
+grid + axes, orbit controls, hover highlight, camera auto-fit).
+
+**Run the API** (if not already running):
+```bash
+docker run -d --name fitcheck -p 8000:8000 <your-image>
+# or: pip install . && python -m fitcheck
+```
+
+**Serve the frontend** and open it:
+```bash
+cd frontend
+python3 -m http.server 5500
+# open http://localhost:5500
+```
+
+The page defaults to calling the API at `http://localhost:8000`. If you
+serve the frontend from the API's own origin (port 8000), it uses that
+origin automatically. Enter a container, add products, and press
+**Calculate & visualize**.
+
 ## Development
 
 ```bash

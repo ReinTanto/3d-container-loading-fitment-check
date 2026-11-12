@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3D Container Loading — Fitment Check</title>
+<style>
+  :root {
+    --bg: #1b2429;
+    --panel: #22313a;
+    --panel-2: #2b3d47;
+    --text: #e6edf0;
+    --muted: #9fb3bd;
+    --accent: #42a5f5;
+    --ok: #66bb6a;
+    --bad: #ef5350;
+    --border: #37474f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* ---------- Left panel ---------- */
+  #panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    overflow-y: auto;
+  }
+  h1 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+  .sub { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+  .section-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin: 18px 0 8px;
+  }
+  .row { display: flex; gap: 8px; margin-bottom: 8px; }
+  label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  input, select {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 5px; padding: 7px 9px; font-size: 13px;
+    outline: none;
+  }
+  input:focus { border-color: var(--accent); }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .product {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 10px; margin-bottom: 10px; position: relative;
+  }
+  .product .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .product .swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: middle; }
+  .product .name { font-size: 13px; font-weight: 600; }
+  .btn {
+    background: var(--accent); color: #0b1418; border: none; border-radius: 6px;
+    padding: 9px 12px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); padding: 4px 8px; font-size: 11px; }
+  .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .actions .btn { flex: 1; }
+  /* ---------- Result ---------- */
+  #result { margin-top: 16px; display: none; }
+  #result.show { display: block; }
+  .badge {
+    display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 13px;
+    font-weight: 700; margin-bottom: 12px;
+  }
+  .badge.ok { background: rgba(102,187,106,.15); color: var(--ok); border: 1px solid var(--ok); }
+  .badge.bad { background: rgba(239,83,80,.15); color: var(--bad); border: 1px solid var(--bad); }
+  .stat { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .stat:last-child { border-bottom: none; }
+  .stat .k { color: var(--muted); }
+  .bar { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; margin: 8px 0 4px; }
+  .bar > div { height: 100%; background: var(--accent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .legend .item { display: flex; align-items: center; font-size: 11px; color: var(--muted); }
+  /* ---------- 3D view ---------- */
+  #view { position: relative; }
+  #view canvas { display: block; }
+  #hud {
+    position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,.45);
+    padding: 8px 12px; border-radius: 8px; font-size: 12px; color: var(--text);
+    pointer-events: none; max-width: 320px;
+  }
+  #hud b { color: var(--accent); }
+  #tooltip {
+    position: absolute; display: none; background: rgba(0,0,0,.7); color: #fff;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; pointer-events: none;
+    transform: translate(-50%, -140%); white-space: nowrap; z-index: 5;
+  }
+  .hint { position: absolute; bottom: 12px; left: 12px; font-size: 11px; color: var(--muted); pointer-events: none; }
+</style>
+</head>
+<body>
+  <!-- ================= LEFT PANEL ================= -->
+  <div id="panel">
+    <h1>3D Container Loading</h1>
+    <div class="sub">Fitment check + visualization</div>
+
+    <div class="section-title">Container</div>
+    <div class="grid-3">
+      <div><label>Length</label><input id="c-len" type="number" value="1200" min="1" /></div>
+      <div><label>Width</label><input id="c-wid" type="number" value="235" min="1" /></div>
+      <div><label>Height</label><input id="c-hei" type="number" value="235" min="1" /></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div><label>Max weight (optional)</label><input id="c-weight" type="number" placeholder="e.g. 24000" min="0" /></div>
+    </div>
+
+    <div class="section-title">Products</div>
+    <div id="products"></div>
+    <button class="btn secondary" id="add-product" style="width:100%">+ Add product</button>
+
+    <div class="actions">
+      <button class="btn" id="check-btn">Calculate &amp; visualize</button>
+    </div>
+
+    <div id="result">
+      <div id="result-badge"></div>
+      <div id="result-stats"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+
+  <!-- ================= 3D VIEW ================= -->
+  <div id="view">
+    <div id="hud">Enter a container and products, then press <b>Calculate</b>.</div>
+    <div id="tooltip"></div>
+    <div class="hint">Drag to rotate · Scroll to zoom · Right-drag to pan · Double-click to reset view</div>
+  </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+/* ============================================================
+   Scene setup (mirrors skjolber/3d-bin-container-packing viewer)
+   ============================================================ */
+const view = document.getElementById("view");
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(80, 1, 0.1, 100000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+renderer.setClearColor("#263238");
+view.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.25;
+controls.enableZoom = true;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(1, 2, 1);
+scene.add(dirLight);
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let hovered = null;
+
+// Groups we rebuild on each calculation
+let contentGroup = null;
+let gridGroup = null;
+const boxMeshes = [];       // for raycasting / hover
+let containerSize = null;   // for camera fit
+
+/* ---------- helpers ---------- */
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+window.addEventListener("resize", resize);
+
+function fitCameraToBox(box, offset = 1.5) {
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI / 180);
+  const camZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * offset;
+  camera.position.set(center.x - camZ * 0.2, center.y + camZ * 0.55, center.z + camZ);
+  camera.lookAt(center);
+  controls.target.copy(center);
+  controls.update();
+}
+
+/* ---------- build a container shell (transparent box + edges) ---------- */
+function buildContainer(len, wid, hei) {
+  // three.js: x = container width, y = container height, z = container length
+  const geo = new THREE.BoxGeometry(wid, hei, len);
+  const group = new THREE.Group();
+
+  const shell = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+    color: 0x888888, opacity: 0.12, transparent: true, depthWrite: false
+  }));
+  group.add(shell);
+
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0x9aa7ad })
+  );
+  group.add(edges);
+  return group;
+}
+
+/* ---------- build one box mesh ---------- */
+function buildBox(p, color) {
+  const geo = new THREE.BoxGeometry(p.dy, p.dz, p.dx);
+  const mat = new THREE.MeshStandardMaterial({
+    color, opacity: 0.72, metalness: 0.15, roughness: 0.9, transparent: true
+  });
+  mat.color.convertSRGBToLinear();
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(p.x + p.dx / 2, p.y + p.dy / 2, p.z + p.dz / 2);
+  // edge outline
+  mesh.add(new THREE.LineSegments(
+    new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0x10151a })
+  ));
+  mesh.userData = {
+    type: "box",
+    name: p.name,
+    unit: p.unit,
+    pos: [p.x, p.y, p.z],
+    dims: [p.dx, p.dy, p.dz],
+  };
+  return mesh;
+}
+
+/* ---------- ground grid + axes (like the reference viewer) ---------- */
+function buildGrid(maxX, maxZ, spacing = 10) {
+  const g = new THREE.Group();
+  const size = Math.max(maxX, maxZ) + spacing * 3;
+  const grid = new THREE.GridHelper(size, size / spacing, 0x42a5f5, 0x2f4a5a);
+  grid.position.set(size / 2 - spacing, 0, size / 2 - spacing);
+  g.add(grid);
+  const origin = new THREE.Vector3(-spacing - 1, 0, -spacing - 1);
+  g.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, maxZ + spacing, 0xffffff, 1, 1));
+  g.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, maxX + spacing, 0xffffff, 1, 1));
+  return g;
+}
+
+/* ---------- clear previous content ---------- */
+function clearContent() {
+  if (contentGroup) { scene.remove(contentGroup); contentGroup.traverse(o => o.geometry && o.geometry.dispose()); }
+  if (gridGroup) { scene.remove(gridGroup); }
+  contentGroup = null; gridGroup = null; boxMeshes.length = 0;
+  if (hovered) { hovered.material.emissive.set(0x000000); hovered = null; }
+}
+
+/* ============================================================
+   Render a /check response
+   ============================================================ */
+function renderResult(res) {
+  clearContent();
+  contentGroup = new THREE.Group();
+
+  const len = res._box.length, wid = res._box.width, hei = res._box.height;
+  containerSize = [wid, hei, len]; // three.js (x, y, z) of the container
+  const container = buildContainer(len, wid, hei);
+  contentGroup.add(container);
+
+  // one mesh per placed unit, colored by product
+  for (const pl of res.placements) {
+    const color = res._colorMap[pl.product_id] || 0x42a5f5;
+    const mesh = buildBox(pl, color);
+    contentGroup.add(mesh);
+    boxMeshes.push(mesh);
+  }
+
+  scene.add(contentGroup);
+
+  // grid + camera
+  gridGroup = buildGrid(len, wid);
+  scene.add(gridGroup);
+  fitCameraToBox(new THREE.Box3(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(wid, hei, len)
+  ), 1.5);
+
+  updateHUD(res);
+  updateResultPanel(res);
+}
+
+/* ============================================================
+   UI: products form
+   ============================================================ */
+const productsEl = document.getElementById("products");
+let productCount = 0;
+const colorPalette = ["#42a5f5","#66bb6a","#ffa726","#ab47bc","#ef5350","#26c6da","#d4e157","#8d6e63","#78909c","#ec407a"];
+
+function addProduct(prefill = {}) {
+  productCount++;
+  const color = colorPalette[(productCount - 1) % colorPalette.length];
+  const el = document.createElement("div");
+  el.className = "product";
+  el.innerHTML = `
+    <div class="head">
+      <div><span class="swatch" style="background:${color}"></span><span class="name">Product ${productCount}</span></div>
+      <button class="btn danger" type="button">remove</button>
+    </div>
+    <div class="row">
+      <div style="flex:1"><label>Name</label><input class="p-name" type="text" value="${prefill.name || "product"}" /></div>
+    </div>
+    <div class="grid-3">
+      <div><label>L</label><input class="p-l" type="number" value="${prefill.l ?? 120}" min="1" /></div>
+      <div><label>W</label><input class="p-w" type="number" value="${prefill.w ?? 80}" min="1" /></div>
+      <div><label>H</label><input class="p-h" type="number" value="${prefill.h ?? 100}" min="1" /></div>
+    </div>
+    <div class="grid-2" style="margin-top:8px">
+      <div><label>Quantity</label><input class="p-q" type="number" value="${prefill.q ?? 1}" min="1" /></div>
+      <div><label>Weight (opt.)</label><input class="p-weight" type="number" placeholder="kg" min="0" /></div>
+    </div>
+  `;
+  el.querySelector(".danger").addEventListener("click", () => {
+    if (productsEl.children.length > 1) el.remove();
+  });
+  productsEl.appendChild(el);
+}
+
+document.getElementById("add-product").addEventListener("click", () => addProduct());
+
+/* seed with a couple of example products */
+addProduct({ name: "pallet", l: 120, w: 80, h: 100, q: 30 });
+addProduct({ name: "parcel", l: 60, w: 40, h: 40, q: 10 });
+
+function collectRequest() {
+  const box = {
+    length: parseFloat(document.getElementById("c-len").value),
+    width: parseFloat(document.getElementById("c-wid").value),
+    height: parseFloat(document.getElementById("c-hei").value),
+  };
+  const mw = document.getElementById("c-weight").value;
+  if (mw) box.max_weight = parseFloat(mw);
+
+  const products = [];
+  for (const el of productsEl.children) {
+    const w = el.querySelector(".p-weight").value;
+    products.push({
+      id: el.querySelector(".p-name").value || "product",
+      length: parseFloat(el.querySelector(".p-l").value),
+      width: parseFloat(el.querySelector(".p-w").value),
+      height: parseFloat(el.querySelector(".p-h").value),
+      quantity: parseInt(el.querySelector(".p-q").value, 10),
+      ...(w ? { weight: parseFloat(w) } : {}),
+    });
+  }
+  return { box, products };
+}
+
+/* ============================================================
+   Call the API
+   ============================================================ */
+// The API base URL. Default to the FastAPI server on localhost:8000.
+// If the page is served by the API itself (same origin), use that origin.
+const DEFAULT_API = "http://localhost:8000";
+const API = (location.protocol === "http:" || location.protocol === "https:")
+  ? (location.port === "8000" ? location.origin : DEFAULT_API)
+  : DEFAULT_API;
+
+async function runCheck() {
+  const req = collectRequest();
+  document.getElementById("hud").innerHTML = "Calculating…";
+  try {
+    const r = await fetch(API + "/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || ("HTTP " + r.status));
+    data._box = req.box;
+    // assign a stable color per product id
+    data._colorMap = {};
+    const seen = [];
+    for (const p of req.products) {
+      if (!seen.includes(p.id)) seen.push(p.id);
+    }
+    seen.forEach((id, i) => {
+      data._colorMap[id] = new THREE.Color(colorPalette[i % colorPalette.length]).getHex();
+    });
+    renderResult(data);
+  } catch (e) {
+    document.getElementById("hud").innerHTML =
+      `Error: ${e.message}<br><span style="color:var(--muted)">Is the API running at ${API}?</span>`;
+  }
+}
+document.getElementById("check-btn").addEventListener("click", runCheck);
+
+/* ============================================================
+   Result panel + legend
+   ============================================================ */
+function updateResultPanel(res) {
+  const el = document.getElementById("result");
+  el.classList.add("show");
+  const badge = document.getElementById("result-badge");
+  badge.className = "badge " + (res.fits ? "ok" : "bad");
+  badge.textContent = res.fits ? "✓ FITS" : "✗ DOES NOT FIT";
+
+  const rows = [
+    ["Units placed", `${res.units_placed} / ${res.units_total}`],
+    ["Box volume", fmt(res.box_volume)],
+    ["Used volume", fmt(res.used_volume)],
+    ["Remaining volume", fmt(res.remaining_volume)],
+    ["Remaining %", res.remaining_volume_pct.toFixed(2) + " %"],
+  ];
+  if (res.max_weight != null) {
+    rows.push(["Weight", `${fmt(res.total_weight)} / ${fmt(res.max_weight)} ${res.weight_ok ? "" : "(over)"}`]);
+  }
+  document.getElementById("result-stats").innerHTML = rows
+    .map(([k, v]) => `<div class="stat"><span class="k">${k}</span><span>${v}</span></div>`).join("");
+
+  // utilization bar
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  bar.innerHTML = `<div style="width:${res.used_volume_pct.toFixed(1)}%"></div>`;
+  document.getElementById("result-stats").after(bar);
+  const cap = document.createElement("div");
+  cap.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:8px";
+  cap.textContent = `Container ${res.used_volume_pct.toFixed(1)}% full`;
+  bar.after(cap);
+
+  // legend
+  const legend = document.getElementById("legend");
+  legend.innerHTML = "";
+  for (const [id, hex] of Object.entries(res._colorMap)) {
+    const item = document.createElement("div");
+    item.className = "item";
+    item.innerHTML = `<span class="swatch" style="background:#${new THREE.Color(hex).getHexString()};margin-right:5px"></span>${id}`;
+    legend.appendChild(item);
+  }
+}
+function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString(); }
+
+function updateHUD(res) {
+  document.getElementById("hud").innerHTML =
+    `${res.fits ? "✓ Fits" : "✗ Does not fit"} · ${res.units_placed}/${res.units_total} units · ` +
+    `${res.remaining_volume_pct.toFixed(1)}% space left`;
+}
+
+/* ============================================================
+   Hover highlight + tooltip
+   ============================================================ */
+const tooltip = document.getElementById("tooltip");
+view.addEventListener("mousemove", (e) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(boxMeshes, false);
+  let target = null;
+  for (const h of hits) {
+    let o = h.object, vis = true;
+    while (o) { if (!o.visible) { vis = false; break; } o = o.parent; }
+    if (vis) { target = h.object; break; }
+  }
+  if (target !== hovered) {
+    if (hovered) hovered.material.emissive.set(0x000000);
+    hovered = target;
+    if (hovered) hovered.material.emissive.set(0x552222);
+  }
+  if (hovered) {
+    const d = hovered.userData;
+    tooltip.style.display = "block";
+    tooltip.style.left = (e.clientX - view.getBoundingClientRect().left) + "px";
+    tooltip.style.top = (e.clientY - view.getBoundingClientRect().top) + "px";
+    tooltip.innerHTML = `<b>${d.name}</b> #${d.unit}<br>at ${d.pos.map(n => Math.round(n)).join(", ")}<br>${d.dims.map(n => Math.round(n)).join(" × ")}`;
+  } else {
+    tooltip.style.display = "none";
+  }
+});
+view.addEventListener("mouseleave", () => { tooltip.style.display = "none"; });
+view.addEventListener("dblclick", () => {
+  if (containerSize) fitCameraToBox(new THREE.Box3(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(containerSize[0], containerSize[1], containerSize[2])
+  ), 1.5);
+});
+
+/* ---------- animate loop ---------- */
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+resize();
+animate();
+</script>
+</body>
+</html>

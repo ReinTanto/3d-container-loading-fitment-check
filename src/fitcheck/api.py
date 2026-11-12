@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .solver import Box, CheckResult, Product, check
@@ -18,6 +19,15 @@ app = FastAPI(
         "returned). `fits: false` means the heuristic did not find an "
         "arrangement; it is not a proof that none exists."
     ),
+)
+
+# Allow the local test frontend (and any origin) to call the API. This is a
+# self-hosted tool with no credentials, so permissive CORS is acceptable.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

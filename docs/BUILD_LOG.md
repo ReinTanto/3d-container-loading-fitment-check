@@ -160,6 +160,31 @@ placed; only set it for a unit that is still unplaced at the end.
 The edge-case round added 27 tests. Total is now **53 tests, all passing**
 (solver 12, use-cases 6, API 8, edge-cases 27).
 
+## 3c. 3D test frontend
+
+A self-contained test frontend (`frontend/index.html`, no build step) was
+added so the check can be exercised and the result visualized in
+three.js. It was styled after the visualizer in
+`skjolber/3d-bin-container-packing` (its `visualizer/viewer` React +
+three.js app): dark scene (`#263238`), a transparent grey container shell
+with edge outlines, one colour per product for the placed boxes (with
+edge outlines), a ground grid + axis arrows, orbit controls with damping,
+hover highlight + tooltip, and a camera that auto-fits the container.
+
+- The page lets you enter the container dimensions (and optional max
+  weight) and any number of products (name, L/W/H, quantity, optional
+  weight), then calls `POST /check` and renders every placement.
+- It is a single HTML file using an import map for three.js (no bundler),
+  so it can be served with `python3 -m http.server`.
+- **Issue found & fixed:** the initial API-URL fallback assumed the page
+  was same-origin with the API; when served by a plain static server it
+  tried to `POST` to its own port (501). Fixed by defaulting to
+  `http://localhost:8000` and only using the page origin when it *is*
+  port 8000.
+- **Verified** with a headless Chromium (Playwright) run: a fitting load
+  (40/40 units, 55% space left) and a non-fitting load (0/40) both render
+  correctly, with no console errors.
+
 ## 4. Known limitations (by design)
 
 - **Heuristic, not a proof.** `fits: true` is reliable (a valid placement
