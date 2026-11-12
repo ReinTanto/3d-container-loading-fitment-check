@@ -203,32 +203,37 @@ function fitCameraToBox(box, offset = 1.5) {
 
 /* ---------- build a container shell (transparent box + edges) ---------- */
 function buildContainer(len, wid, hei) {
-  // three.js: x = container width, y = container height, z = container length
-  const geo = new THREE.BoxGeometry(wid, hei, len);
+  // three.js (X, Y, Z) = (length, height, width) — SAME mapping as the boxes,
+  // so the shell and the boxes align.
+  const geo = new THREE.BoxGeometry(len, hei, wid);
   const group = new THREE.Group();
 
   const shell = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
     color: 0x888888, opacity: 0.12, transparent: true, depthWrite: false
   }));
+  shell.position.set(len / 2, hei / 2, wid / 2); // center the corner-at-origin geometry
   group.add(shell);
 
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(geo),
     new THREE.LineBasicMaterial({ color: 0x9aa7ad })
   );
+  edges.position.set(len / 2, hei / 2, wid / 2);
   group.add(edges);
   return group;
 }
 
 /* ---------- build one box mesh ---------- */
 function buildBox(p, color) {
-  const geo = new THREE.BoxGeometry(p.dy, p.dz, p.dx);
+  // three.js (X, Y, Z) = (dx, dz, dy) = (length, height, width)
+  const geo = new THREE.BoxGeometry(p.dx, p.dz, p.dy);
   const mat = new THREE.MeshStandardMaterial({
     color, opacity: 0.72, metalness: 0.15, roughness: 0.9, transparent: true
   });
   mat.color.convertSRGBToLinear();
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(p.x + p.dx / 2, p.y + p.dy / 2, p.z + p.dz / 2);
+  // solver (x, y, z) = (length, width, height) -> three.js (X, Y, Z) = (x, z, y)
+  mesh.position.set(p.x + p.dx / 2, p.z + p.dz / 2, p.y + p.dy / 2);
   // edge outline
   mesh.add(new THREE.LineSegments(
     new THREE.EdgesGeometry(geo),
@@ -244,16 +249,15 @@ function buildBox(p, color) {
   return mesh;
 }
 
-/* ---------- ground grid + axes (like the reference viewer) ---------- */
-function buildGrid(maxX, maxZ, spacing = 10) {
+/* ---------- ground grid + axes, centered at the origin ---------- */
+function buildGrid(maxLen, maxWid, spacing = 10) {
   const g = new THREE.Group();
-  const size = Math.max(maxX, maxZ) + spacing * 3;
+  const size = Math.max(maxLen, maxWid) + spacing * 3;
   const grid = new THREE.GridHelper(size, size / spacing, 0x42a5f5, 0x2f4a5a);
-  grid.position.set(size / 2 - spacing, 0, size / 2 - spacing);
-  g.add(grid);
-  const origin = new THREE.Vector3(-spacing - 1, 0, -spacing - 1);
-  g.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, maxZ + spacing, 0xffffff, 1, 1));
-  g.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, maxX + spacing, 0xffffff, 1, 1));
+  g.add(grid); // GridHelper is already centered at its origin
+  g.add(new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), maxLen + spacing, 0xffffff, 1, 1));
+  g.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), maxWid + spacing, 0xffffff, 1, 1));
+  g.add(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 40, 0x888888, 1, 1));
   return g;
 }
 
@@ -273,7 +277,7 @@ function renderResult(res) {
   contentGroup = new THREE.Group();
 
   const len = res._box.length, wid = res._box.width, hei = res._box.height;
-  containerSize = [wid, hei, len]; // three.js (x, y, z) of the container
+  containerSize = [len, hei, wid]; // three.js (x, y, z) of the container
   const container = buildContainer(len, wid, hei);
   contentGroup.add(container);
 
@@ -285,18 +289,59 @@ function renderResult(res) {
     boxMeshes.push(mesh);
   }
 
+  // Center the whole container (and its boxes) on the grid at the origin.
+  contentGroup.position.set(-len / 2, 0, -wid / 2);
+
   scene.add(contentGroup);
 
   // grid + camera
   gridGroup = buildGrid(len, wid);
   scene.add(gridGroup);
   fitCameraToBox(new THREE.Box3(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(wid, hei, len)
+    new THREE.Vector3(-len / 2, 0, -wid / 2),
+    new THREE.Vector3(len / 2, hei, wid / 2)
   ), 1.5);
+
+  // Client-side collision + containment check (independent of the API).
+  const collision = checkCollisions(res);
+  res._collision = collision;
 
   updateHUD(res);
   updateResultPanel(res);
+}
+
+/* ---------- client-side collision & containment check ----------
+   Verifies, from the returned placements alone, that (a) no two placed
+   boxes overlap and (b) every box lies inside the container. This is an
+   independent sanity check on top of the solver's own guarantees. */
+function checkCollisions(res) {
+  const eps = 1e-6;
+  const B = res._box;
+  const P = res.placements;
+  let overlapPairs = 0;
+  let outOfBounds = 0;
+  // containment
+  for (const p of P) {
+    if (
+      p.x < -eps || p.y < -eps || p.z < -eps ||
+      p.x + p.dx > B.length + eps ||
+      p.y + p.dy > B.width + eps ||
+      p.z + p.dz > B.height + eps
+    ) outOfBounds++;
+  }
+  // pairwise overlap (AABB)
+  for (let i = 0; i < P.length; i++) {
+    const a = P[i];
+    for (let j = i + 1; j < P.length; j++) {
+      const b = P[j];
+      const separated =
+        a.x + a.dx <= b.x + eps || b.x + b.dx <= a.x + eps ||
+        a.y + a.dy <= b.y + eps || b.y + b.dy <= a.y + eps ||
+        a.z + a.dz <= b.z + eps || b.z + b.dz <= a.z + eps;
+      if (!separated) overlapPairs++;
+    }
+  }
+  return { overlapPairs, outOfBounds, ok: overlapPairs === 0 && outOfBounds === 0 };
 }
 
 /* ============================================================
@@ -424,6 +469,10 @@ function updateResultPanel(res) {
   if (res.max_weight != null) {
     rows.push(["Weight", `${fmt(res.total_weight)} / ${fmt(res.max_weight)} ${res.weight_ok ? "" : "(over)"}`]);
   }
+  if (res._collision) {
+    const c = res._collision;
+    rows.push(["Collision check", c.ok ? "✓ no overlaps, all in bounds" : `✗ ${c.overlapPairs} overlaps / ${c.outOfBounds} out-of-bounds`]);
+  }
   document.getElementById("result-stats").innerHTML = rows
     .map(([k, v]) => `<div class="stat"><span class="k">${k}</span><span>${v}</span></div>`).join("");
 
@@ -450,9 +499,13 @@ function updateResultPanel(res) {
 function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString(); }
 
 function updateHUD(res) {
+  const c = res._collision;
+  const collisionLine = c
+    ? (c.ok ? "· ✓ no collisions" : `· <span style="color:var(--bad)">✗ ${c.overlapPairs} overlaps, ${c.outOfBounds} out-of-bounds</span>`)
+    : "";
   document.getElementById("hud").innerHTML =
     `${res.fits ? "✓ Fits" : "✗ Does not fit"} · ${res.units_placed}/${res.units_total} units · ` +
-    `${res.remaining_volume_pct.toFixed(1)}% space left`;
+    `${res.remaining_volume_pct.toFixed(1)}% space left ${collisionLine}`;
 }
 
 /* ============================================================
